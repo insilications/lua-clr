@@ -1,0 +1,11 @@
+prefix=##INSTALL_TOP##
+exec_prefix=${prefix}
+libdir=##INSTALL_LIB##
+includedir=${prefix}/include
+
+Version: ##R##
+Name: Lua
+Description: An Extensible Extension Language
+Requires:
+Libs: -llua  -lm -ldl
+Cflags: -I${includedir}

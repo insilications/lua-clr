@@ -10,13 +10,16 @@ PLAT= guess
 # so take care if INSTALL_TOP is not an absolute path. See the local target.
 # You may want to make INSTALL_LMOD and INSTALL_CMOD consistent with
 # LUA_ROOT, LUA_LDIR, and LUA_CDIR in luaconf.h.
-INSTALL_TOP= /usr/local
+DESTDIR?=
+INSTALL_TOP= $(DESTDIR)/usr
 INSTALL_BIN= $(INSTALL_TOP)/bin
 INSTALL_INC= $(INSTALL_TOP)/include
-INSTALL_LIB= $(INSTALL_TOP)/lib
-INSTALL_MAN= $(INSTALL_TOP)/man/man1
+INSTALL_LIB= $(INSTALL_TOP)/lib64
+INSTALL_MAN= $(INSTALL_TOP)/share/man/man1
 INSTALL_LMOD= $(INSTALL_TOP)/share/lua/$V
 INSTALL_CMOD= $(INSTALL_TOP)/lib/lua/$V
+INSTALL_PC= $(INSTALL_LIB)/pkgconfig
+PC_IN=lua.pc.in
 
 # How to install. If your install program does not support "-p", then
 # you may have to run ranlib on the installed liblua.a.
@@ -41,8 +44,9 @@ PLATS= guess aix bsd c89 freebsd generic linux linux-readline macosx mingw posix
 # What to install.
 TO_BIN= lua luac
 TO_INC= lua.h luaconf.h lualib.h lauxlib.h lua.hpp
-TO_LIB= liblua.a
+TO_LIB= liblua.a liblua.so.$(R)
 TO_MAN= lua.1 luac.1
+TO_PC= lua.pc
 
 # Lua version and release.
 V= 5.4
@@ -51,21 +55,25 @@ R= $V.4
 # Targets start here.
 all:	$(PLAT)
 
-$(PLATS) help test clean:
-	@cd src && $(MAKE) $@
+$(PLATS) help test clean: pc
+	cd src && $(MAKE) $@ V=$(V) R=$(R)
 
 install: dummy
-	cd src && $(MKDIR) $(INSTALL_BIN) $(INSTALL_INC) $(INSTALL_LIB) $(INSTALL_MAN) $(INSTALL_LMOD) $(INSTALL_CMOD)
+	cd src && $(MKDIR) $(INSTALL_BIN) $(INSTALL_INC) $(INSTALL_LIB) $(INSTALL_MAN) $(INSTALL_LMOD) $(INSTALL_CMOD) $(INSTALL_PC)
 	cd src && $(INSTALL_EXEC) $(TO_BIN) $(INSTALL_BIN)
 	cd src && $(INSTALL_DATA) $(TO_INC) $(INSTALL_INC)
 	cd src && $(INSTALL_DATA) $(TO_LIB) $(INSTALL_LIB)
+	cd $(INSTALL_LIB) && ln -sf liblua.so.$(R) liblua.so.$(V) && \
+	ln -sf liblua.so.$(R) liblua.so
 	cd doc && $(INSTALL_DATA) $(TO_MAN) $(INSTALL_MAN)
+	cd src && $(INSTALL_DATA) $(TO_PC)  $(INSTALL_PC)
 
 uninstall:
 	cd src && cd $(INSTALL_BIN) && $(RM) $(TO_BIN)
 	cd src && cd $(INSTALL_INC) && $(RM) $(TO_INC)
 	cd src && cd $(INSTALL_LIB) && $(RM) $(TO_LIB)
 	cd doc && cd $(INSTALL_MAN) && $(RM) $(TO_MAN)
+	cd src && cd $(INSTALL_PC) && $(RM) $(TO_PC)
 
 local:
 	$(MAKE) install INSTALL_TOP=../install
@@ -92,13 +100,13 @@ echo:
 	@echo "INSTALL_CMOD= $(INSTALL_CMOD)"
 	@echo "INSTALL_EXEC= $(INSTALL_EXEC)"
 	@echo "INSTALL_DATA= $(INSTALL_DATA)"
+	@echo "INSTALL_PC= $(INSTALL_PC)"
 
 # Echo pkg-config data.
 pc:
-	@echo "version=$R"
-	@echo "prefix=$(INSTALL_TOP)"
-	@echo "libdir=$(INSTALL_LIB)"
-	@echo "includedir=$(INSTALL_INC)"
+	sed s%##INSTALL_TOP##%$(INSTALL_TOP)% src/$(PC_IN) > src/$(TO_PC) && \
+	sed -i s%##INSTALL_LIB##%$(INSTALL_LIB)% src/$(TO_PC) && \
+	sed -i s%##R##%$(R)% src/$(TO_PC)
 
 # Targets that do not create files (not all makes understand .PHONY).
 .PHONY: all $(PLATS) help test clean install uninstall local dummy echo pc
