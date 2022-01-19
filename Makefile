@@ -49,24 +49,27 @@ TO_MAN= lua.1 luac.1
 TO_PC= lua.pc
 
 # Lua version and release.
-V= 5.4
-R= $V.4
+K= 5.4
+R= $K.4
 
 # Targets start here.
 all:	$(PLAT)
 
 $(PLATS) help test clean: pc
-	cd src && $(MAKE) $@ V=$(V) R=$(R)
+	cd src && $(MAKE) $@ K=$(K) R=$(R)
 
 test_pgo:      dummy
-	src/lua scimark.lua
+	src/lua scimark.lua -small
+	src/lua_shared scimark.lua -small
+	src/lua scimark.lua -large
+	src/lua_shared scimark.lua -large
 
 install: dummy
 	cd src && $(MKDIR) $(INSTALL_BIN) $(INSTALL_INC) $(INSTALL_LIB) $(INSTALL_MAN) $(INSTALL_LMOD) $(INSTALL_CMOD) $(INSTALL_PC)
 	cd src && $(INSTALL_EXEC) $(TO_BIN) $(INSTALL_BIN)
 	cd src && $(INSTALL_DATA) $(TO_INC) $(INSTALL_INC)
 	cd src && $(INSTALL_DATA) $(TO_LIB) $(INSTALL_LIB)
-	cd $(INSTALL_LIB) && ln -sf liblua.so.$(R) liblua.so.$(V) && \
+	cd $(INSTALL_LIB) && ln -sf liblua.so.$(R) liblua.so.$(K) && \
 	ln -sf liblua.so.$(R) liblua.so
 	cd doc && $(INSTALL_DATA) $(TO_MAN) $(INSTALL_MAN)
 	cd src && $(INSTALL_DATA) $(TO_PC)  $(INSTALL_PC)

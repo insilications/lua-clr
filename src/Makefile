@@ -4,15 +4,16 @@
 # == CHANGE THE SETTINGS BELOW TO SUIT YOUR ENVIRONMENT =======================
 
 # Your platform. See PLATS for possible values.
+
 PLAT= guess
 
 CC= gcc -std=gnu99
-CFLAGS= -O2 -Wall -Wextra -DLUA_COMPAT_5_3 $(SYSCFLAGS) $(MYCFLAGS)
+CFLAGS= -O3 -Wall -Wextra -DLUA_COMPAT_5_3 $(SYSCFLAGS) $(MYCFLAGS)
 LDFLAGS= $(SYSLDFLAGS) $(MYLDFLAGS)
 LIBS= -lm $(SYSLIBS) $(MYLIBS)
 
 AR= ar rcu
-RANLIB= ranlib
+RANLIB= gcc-ranlib
 RM= rm -f
 UNAME= uname
 
@@ -26,7 +27,7 @@ MYLIBS=
 MYOBJS=
 
 # Special flags for compiler modules; -Os reduces code size.
-CMCFLAGS= 
+CMCFLAGS=
 
 # == END OF USER SETTINGS -- NO NEED TO CHANGE ANYTHING BELOW THIS LINE =======
 
@@ -39,13 +40,14 @@ LIB_O=	lauxlib.o lbaselib.o lcorolib.o ldblib.o liolib.o lmathlib.o loadlib.o lo
 BASE_O= $(CORE_O) $(LIB_O) $(MYOBJS)
 
 LUA_T=	lua
+LUA_T_SHARED=	lua_shared
 LUA_O=	lua.o
 
 LUAC_T=	luac
 LUAC_O=	luac.o
 
 ALL_O= $(BASE_O) $(LUA_O) $(LUAC_O)
-ALL_T= $(LUA_A) $(LUA_T) $(LUAC_T) $(LUA_SO)
+ALL_T= $(LUA_A) $(LUA_T) $(LUAC_T) $(LUA_SO) $(LUA_T_SHARED)
 ALL_A= $(LUA_A)
 
 # Targets start here.
@@ -62,10 +64,14 @@ $(LUA_A): $(BASE_O)
 	$(RANLIB) $@
 
 $(LUA_SO): $(CORE_O) $(LIB_O)
-	$(CC) -shared -Wl,-soname,$(LUA_SO).$(V) -o $@.$(R) $? -ldl -lm $(MYLDFLAGS)
+	$(CC) -shared -Wl,-soname,$(LUA_SO).$(K) -o $@.$(R) $? -ldl -lm $(MYLDFLAGS)
 
 $(LUA_T): $(LUA_O) $(LUA_A)
 	$(CC) -o $@ $(LDFLAGS) $(LUA_O) $(LUA_A) $(LIBS)
+
+$(LUA_T_SHARED): $(LUA_O) $(LUA_SO)
+	$(CC) -o $@ $(LDFLAGS) $(LUA_O) $(LUA_SO).$(R) $(LIBS)
+	@ln -sf liblua.so.$(R) liblua.so.$(K)
 
 $(LUAC_T): $(LUAC_O) $(LUA_A)
 	$(CC) -o $@ $(LDFLAGS) $(LUAC_O) $(LUA_A) $(LIBS)
@@ -127,7 +133,7 @@ linux-noreadline:
 	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-Wl,-E -ldl"
 
 linux-readline:
-	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX -DLUA_USE_READLINE" SYSLIBS="-Wl,-E -ldl -lreadline"
+	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX -DLUA_USE_READLINE" SYSLIBS="-Wl,-E -ldl -Wl,--whole-archive,--as-needed,--allow-multiple-definition,/usr/lib64/libreadline.a,/usr/lib64/libtinfow.a,-lpthread,-ldl,-lm,-lmvec,--no-whole-archive"
 
 Darwin macos macosx:
 	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_MACOSX -DLUA_USE_READLINE" SYSLIBS="-lreadline"
