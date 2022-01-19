@@ -58,6 +58,9 @@ all:	$(PLAT)
 $(PLATS) help test clean: pc
 	cd src && $(MAKE) $@ V=$(V) R=$(R)
 
+test_pgo:      dummy
+	src/lua scimark.lua
+
 install: dummy
 	cd src && $(MKDIR) $(INSTALL_BIN) $(INSTALL_INC) $(INSTALL_LIB) $(INSTALL_MAN) $(INSTALL_LMOD) $(INSTALL_CMOD) $(INSTALL_PC)
 	cd src && $(INSTALL_EXEC) $(TO_BIN) $(INSTALL_BIN)
@@ -109,6 +112,6 @@ pc:
 	sed -i s%##R##%$(R)% src/$(TO_PC)
 
 # Targets that do not create files (not all makes understand .PHONY).
-.PHONY: all $(PLATS) help test clean install uninstall local dummy echo pc
+.PHONY: all $(PLATS) clean test test_pgo install local none dummy echo pecho lecho
 
 # (end of Makefile)
